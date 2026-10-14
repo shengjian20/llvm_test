@@ -1,9 +1,27 @@
 cmake_minimum_required(VERSION 3.20)
 
-# 若调用 cmake 时未显式传入 -DCMAKE_TOOLCHAIN_FILE, 默认使用本工程的交叉工具链,
-# 避免误用主机编译器 (必须在 project() 之前设置)
+# ---------------- 工具链选择 (首次 configure 时生效) ----------------
+# 两种指定方式 (优先级从高到低):
+#   1. -DCMAKE_TOOLCHAIN_FILE=<文件>   直接指定任意工具链文件
+#   2. -DTOOLCHAIN=atfe|gnu            在预置工具链中选择 (默认 atfe)
+#      atfe : ATfE (LLVM/clang + picolibc)      → cmake/llvm.cmake
+#      gnu  : GNU Arm Embedded (gcc + picolibc) → cmake/gnu.cmake
+# 注意: 工具链在 project() 之后不可更换, 换工具链请使用新的构建目录,
+# 或先清空 build/ 再重新 configure
 if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-    set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/cmake/toolchain.cmake"
+    if(NOT DEFINED TOOLCHAIN)
+        set(TOOLCHAIN "atfe")
+    endif()
+    if(TOOLCHAIN STREQUAL "atfe")
+        set(_toolchain_file "cmake/llvm.cmake")
+    elseif(TOOLCHAIN STREQUAL "gnu")
+        set(_toolchain_file "cmake/gnu.cmake")
+    else()
+        message(FATAL_ERROR
+            "未知工具链 TOOLCHAIN='${TOOLCHAIN}'\n"
+            "可选值: atfe (ATfE/clang, 默认) | gnu (GNU/gcc)")
+    endif()
+    set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/${_toolchain_file}"
         CACHE FILEPATH "交叉编译工具链文件")
 endif()
 
