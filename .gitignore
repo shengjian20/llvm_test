@@ -1,0 +1,5 @@
+# others
+/docs/vendor/
+
+# build output
+/build/
