@@ -1,0 +1,32 @@
+# =============================================================================
+# clangd 配置 (代码补全 / 跳转 / 诊断)
+#
+# clangd 依赖 CMake 生成的编译数据库 compile_commands.json。
+# 本工程 CMakeLists.txt 已设置 CMAKE_EXPORT_COMPILE_COMMANDS=ON,
+# 因此正常配置一次工程即可生成:
+#     cmake -S . -B build && cmake --build build
+# 生成的 build/compile_commands.json 即包含完整的目标架构与头文件搜索路径。
+#
+# 建议:
+#   1) 使用工具链自带的 clangd (支持 arm-none-eabi 目标), 例如:
+#        /opt/ATfE-23.1.0-Linux-x86_64/bin/clangd
+#   2) 启动 clangd 时加 --query-driver, 让它用交叉工具链解析系统头文件:
+#        clangd --query-driver=/opt/ATfE-23.1.0-Linux-x86_64/bin/*
+# =============================================================================
+
+CompileFlags:
+  # 编译数据库所在目录 (相对于本文件所在目录)
+  CompilationDatabase: build
+
+  # 一次性显示全部诊断, 不在 20 条处截断
+  Add: [-ferror-limit=0]
+
+Diagnostics:
+  # 交叉编译场景下 "未使用的 include" 提示意义不大
+  UnusedIncludes: None
+
+  # 抑制 "头文件被反向包含时构建 preamble" 的伪错误:
+  # 固件库中 gd32f4xx.h 会包含 gd32f4xx_libopt.h, 而后者又引入会包含
+  # gd32f4xx.h 的外设头, 单独打开 gd32f4xx_libopt.h 时 clangd 会误报
+  # pp_including_mainfile_in_preamble (不影响实际编译)
+  Suppress: [pp_including_mainfile_in_preamble]

@@ -1,0 +1,98 @@
+{
+    // 任务: 双工具链 (atfe / gnu), 各用独立构建目录 (工具链不可共目录)
+    //   atfe : ATfE (clang + picolibc)  → build-atfe/  (默认, Ctrl+Shift+B)
+    //   gnu  : GNU Arm Embedded (gcc + picolibc) → build-gnu/
+    //
+    // 任务命名: <动作> / <动作>-gnu
+    // 首次 configure 由各任务内嵌的 bash -c 完成 (配置期检测 GD32_PART 与
+    // 工具链, 已配置则跳过直接增量构建)
+    //
+    // probe-rs: /opt/probe-rs-tools-x86_64-unknown-linux-gnu/probe-rs (v0.32.0)
+    // 芯片名 GD32F470VG (GD32 调试 ID 与 STM32F4 相同, 自动探测无法识别,
+    // 所有 probe-rs 调用都必须显式 --chip)
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "if [ ! -f build-atfe/CMakeCache.txt ]; then cmake -S . -B build-atfe -DGD32_PART=GD32F470VG; fi; cmake --build build-atfe",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [],
+            "detail": "增量构建 (ATfE/clang, build-atfe/)"
+        },
+        {
+            "label": "rebuild",
+            "type": "shell",
+            "command": "if [ ! -f build-atfe/CMakeCache.txt ]; then cmake -S . -B build-atfe -DGD32_PART=GD32F470VG; fi; cmake --build build-atfe --clean-first",
+            "group": "build",
+            "problemMatcher": [],
+            "detail": "清理后全量重建 (ATfE/clang)"
+        },
+        {
+            "label": "build-gnu",
+            "type": "shell",
+            "command": "if [ ! -f build-gnu/CMakeCache.txt ]; then cmake -S . -B build-gnu -DCMAKE_TOOLCHAIN_FILE=cmake/gnu.cmake -DGD32_PART=GD32F470VG; fi; cmake --build build-gnu",
+            "group": "build",
+            "problemMatcher": [],
+            "detail": "增量构建 (GNU/gcc + picolibc, build-gnu/)"
+        },
+        {
+            "label": "rebuild-gnu",
+            "type": "shell",
+            "command": "if [ ! -f build-gnu/CMakeCache.txt ]; then cmake -S . -B build-gnu -DCMAKE_TOOLCHAIN_FILE=cmake/gnu.cmake -DGD32_PART=GD32F470VG; fi; cmake --build build-gnu --clean-first",
+            "group": "build",
+            "problemMatcher": [],
+            "detail": "清理后全量重建 (GNU/gcc + picolibc)"
+        },
+        {
+            "label": "flash-download",
+            "type": "process",
+            "command": "/opt/probe-rs-tools-x86_64-unknown-linux-gnu/probe-rs",
+            "args": [
+                "download",
+                "--chip", "GD32F470VG",
+                "--verify",
+                "build-atfe/gd32f470_blink.elf"
+            ],
+            "dependsOn": ["build"],
+            "dependsOrder": "sequence",
+            "problemMatcher": [],
+            "detail": "烧写并校验 (flash 任务的前置步骤, 也可单独运行)"
+        },
+        {
+            "label": "flash",
+            "type": "process",
+            "command": "/opt/probe-rs-tools-x86_64-unknown-linux-gnu/probe-rs",
+            "args": [
+                "reset",
+                "--chip", "GD32F470VG"
+            ],
+            "dependsOn": ["flash-download"],
+            "dependsOrder": "sequence",
+            "problemMatcher": [],
+            "detail": "完整流程: 构建(ATfE) → 烧写校验 → 复位运行"
+        },
+        {
+            "label": "flash-gnu",
+            "type": "process",
+            "command": "/opt/probe-rs-tools-x86_64-unknown-linux-gnu/probe-rs",
+            "args": [
+                "download",
+                "--chip", "GD32F470VG",
+                "--verify",
+                "build-gnu/gd32f470_blink.elf",
+                "&&",
+                "/opt/probe-rs-tools-x86_64-unknown-linux-gnu/probe-rs",
+                "reset",
+                "--chip", "GD32F470VG"
+            ],
+            "dependsOn": ["build-gnu"],
+            "dependsOrder": "sequence",
+            "problemMatcher": [],
+            "detail": "完整流程: 构建(GNU) → 烧写校验 → 复位运行"
+        }
+    ]
+}
