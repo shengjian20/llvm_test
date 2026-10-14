@@ -1,0 +1,8 @@
+{
+    "editor.fontFamily": "'JetBrainsMono Nerd Font'",
+	"clangd.path": "/opt/ATfE-23.1.0-Linux-x86_64/bin/clangd",
+	"clangd.arguments": [
+		"--query-driver=/opt/ATfE-23.1.0-Linux-x86_64/bin/*"
+	],
+	"probe-rs-debugger.debuggerExecutable": "/opt/probe-rs-tools-x86_64-unknown-linux-gnu/probe-rs",
+}

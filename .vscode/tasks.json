@@ -1,0 +1,71 @@
+{
+    // 任务: build / rebuild / flash
+    // build   : 增量构建 (CMake, 输出到 build/)
+    // rebuild : 清理后全量构建
+    // flash   : 构建 → 烧写校验 → 复位运行
+    //           拆为依赖链: flash(复位) ← flash-download(烧写) ← build,
+    //           每个任务都是纯 command+args (type: process, 不经 shell)
+    //
+    // probe-rs: /opt/probe-rs-tools-x86_64-unknown-linux-gnu/probe-rs (v0.32.0)
+    // 芯片名 GD32F470VG (VGT6 = VG 系列 + LQFP100 封装; GD32 调试 ID 与 STM32F4
+    // 相同, 自动探测无法识别, 所有 probe-rs 调用都必须显式 --chip)
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "build"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [],
+            "detail": "增量构建 gd32f470_blink.elf"
+        },
+        {
+            "label": "rebuild",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "build",
+                "--clean-first"
+            ],
+            "group": "build",
+            "problemMatcher": [],
+            "detail": "清理后全量重新构建"
+        },
+        {
+            "label": "flash-download",
+            "type": "process",
+            "command": "/opt/probe-rs-tools-x86_64-unknown-linux-gnu/probe-rs",
+            "args": [
+                "download",
+                "--chip", "GD32F470VG",
+                "--verify",
+                "build/gd32f470_blink.elf"
+            ],
+            "dependsOn": ["build"],
+            "dependsOrder": "sequence",
+            "problemMatcher": [],
+            "detail": "烧写并校验固件 (flash 任务的前置步骤, 也可单独运行)"
+        },
+        {
+            "label": "flash",
+            "type": "process",
+            "command": "/opt/probe-rs-tools-x86_64-unknown-linux-gnu/probe-rs",
+            "args": [
+                "reset",
+                "--chip", "GD32F470VG"
+            ],
+            "dependsOn": ["flash-download"],
+            "dependsOrder": "sequence",
+            "problemMatcher": [],
+            "detail": "完整流程: 构建 → 烧写校验 → 复位运行"
+        }
+    ]
+}
