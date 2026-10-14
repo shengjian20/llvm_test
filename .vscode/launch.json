@@ -7,7 +7,7 @@
         {
             "type": "probe-rs-debug",
             "request": "launch",
-            "name": "debug with probe-rs",
+            "name": "launch with probe-rs",
             "cwd": "${workspaceRoot}",
             "connectUnderReset": false,
             "chip": "GD32F470VG",
@@ -20,6 +20,20 @@
                     "binaryFormat": "elf"
                 }
             },
+            "coreConfigs": [
+                {
+                    "coreIndex": 0,
+                    "programBinary": "./build/gd32f470_blink.elf"
+                }
+            ]
+        },
+        {
+            "type": "probe-rs-debug",
+            "request": "attach",
+            "name": "attach with probe-rs",
+            "cwd": "${workspaceRoot}",
+            "connectUnderReset": false,
+            "chip": "GD32F470VG",
             "coreConfigs": [
                 {
                     "coreIndex": 0,
