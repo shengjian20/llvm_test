@@ -50,6 +50,11 @@ if(NOT DEFINED GD32_PART)
 endif()
 add_subdirectory(third_party/Firmware)
 
+# ---------------- RT-Thread (可选; 仅内核适配) ----------------
+# 启用: -DRTOS_RTTHREAD=ON 或取消下行注释; 目标名 RTOS::rtthread
+# set(RTOS_RTTHREAD ON)
+add_subdirectory(third_party/rtos)
+
 # ---------------- 应用目标 ----------------
 add_executable(${PROJECT_NAME}
     src/main.c
